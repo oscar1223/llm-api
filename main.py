@@ -1,34 +1,46 @@
 # 🚀 main.py
 
-from fastapi import FastAPI  # Framework web para crear API
+from fastapi import FastAPI, Depends, HTTPException, Header  # Framework web para crear API
 from pydantic import BaseModel  # Valida datos del request
-
-from rag import get_qa_chain  # Cargamos la función que retorna la cadena RAG
+from modules.rag import get_chain_for_user  # Cargamos la función que retorna la cadena RAG
+from modules.auth import register_user, login_user
+from jwt_utils import verify_token  # Verifica el token JWT
 
 app = FastAPI()
-qa_chain = get_qa_chain()  # Inicializamos la cadena una vez
 
-# Definimos el esquema de la petición
-class Question(BaseModel):
+def get_user_id_from_token(authorization: str = Header(...)):
+    token = authorization.split("Bearer ")[-1]
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    return payload["user_id"]
+
+# 🔐 Autenticación
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/register")
+def register(data: AuthRequest):
+    return register_user(data.username, data.password)
+
+@app.post("/login")
+def login(data: AuthRequest):
+    return login_user(data.username, data.password)
+
+
+# 💬 Chat con memoria + RAG
+class ChatRequest(BaseModel):
+    user_id: str
     query: str
-
-@app.post("/ask")
-def ask_question(q: Question):
-    response = qa_chain.invoke(q.query)
-    for doc in response["source_documents"]:
-        print("🧩", doc.page_content)
-
-    print("Objeto", response)
-    print("🔍 Respuesta: ", str(response["result"]))
-    return {"answer": response}
 
 conversations_by_user = {}
 
 @app.post("/chat")
-def chat_enpoint(q: Question):
-    user_id = "racso"  # o pasar por header/body
-    if user_id not in conversations_by_user:
-        conversations_by_user[user_id] = ConversationChain(llm=llm, memory=ConversationBufferMemory())
-
-    response = conversations_by_user[user_id].predict(input=q.query)
-    return {"answer": response}
+def chat(req: ChatRequest, user_id: str = Depends(get_user_id_from_token)):
+    chain = get_chain_for_user(req.user_id)
+    result = chain.invoke({"question": req.query})
+    return {
+        "👀 answer": result["answer"],
+        "🗒️ sources": [doc.page_content for doc in result.get("source_documents", [])]
+    }

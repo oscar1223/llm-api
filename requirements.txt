@@ -9,3 +9,7 @@ langchain-openai
 langchain-chroma==0.2.3
 chromadb==0.4.24
 numpy==1.26.4
+pymongo
+passlib[bcrypt]
+python-jose
+python-multipart
