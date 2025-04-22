@@ -1,7 +1,7 @@
 from passlib.context import CryptContext
 from uuid import uuid4
-from db import users_collection
-from jwt_utils import create_token
+from .mongo import users_collection
+from .jwt_utils import create_token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

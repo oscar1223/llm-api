@@ -1,12 +1,20 @@
 # 🚀 main.py
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, HTTPException, Header  # Framework web para crear API
 from pydantic import BaseModel  # Valida datos del request
 from modules.rag import get_chain_for_user  # Cargamos la función que retorna la cadena RAG
 from modules.auth import register_user, login_user
-from jwt_utils import verify_token  # Verifica el token JWT
+from modules.jwt_utils import verify_token  # Verifica el token JWT
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Frontend Vite
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_user_id_from_token(authorization: str = Header(...)):
     token = authorization.split("Bearer ")[-1]

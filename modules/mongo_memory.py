@@ -1,5 +1,5 @@
 from langchain_core.memory import BaseMemory
-from db import db
+from .mongo import db
 from bson import ObjectId
 
 memory_collection = db["memories"]

@@ -5,7 +5,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-from mongo_memory import MongoMemory
+from .mongo_memory import MongoMemory
 
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
